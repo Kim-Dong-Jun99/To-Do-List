@@ -4,6 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose")
 const assert = require("assert")
+const _ = require("lodash")
 // const date = require(__dirname + "/date.js");
 const url = require(__dirname+"/url.js");
 const app = express();
@@ -20,37 +21,20 @@ const itemSchema = {
   name:String
 };
 
+const listSchema = {
+  name:String,
+  items:[itemSchema]
+};
+
+
 const Item = mongoose.model("Item", itemSchema);
+const List = mongoose.model("List",listSchema);
 
 
 let items = [];
-let workItems = [];
-
-const item1 = new Item({
-  name:"Welcome to your todo list"
-});
-
-const item2 = new Item({
-  name:"Hit the + button to add a new item"
-});
-
-const item3 = new Item({
-  name:"<-- Hit this to delete an item"
-});
-
-const defaultItems = [item1, item2, item3];
-
-// Item.insertMany(defaultItems, function(err){
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     console.log("succesfully saved");
-//   }
-// })
 
 app.get("/", function(req, res) {
 
-  // const day = date.getDate();
 
   Item.find({}, function (err, result) {
 
@@ -73,33 +57,73 @@ app.get("/", function(req, res) {
 app.post("/", function(req, res){
 
   const item = req.body.newItem;
+  const list = req.body.list;
+  const newItem = new Item({
+    name:item
+  });
 
-  if (req.body.list === "Work") {
-    workItems.push(item);
-    res.redirect("/work");
-  } else {
-    const newItem = new Item({
-      name:item
-    });
-    newItem.save(function(err){
-      if (err) {
-        console.log(err);
-      } else {
-        console.log("successfully added");
+  if (list === "Today") {
+    newItem.save(function (error) {
+      if (!error) {
+        console.log("item successfully added");
+        res.redirect("/");
       }
-      // items.push(item);
-      res.redirect("/");
+    });
+  } else {
+    List.findOne({name: list}, function (error, result) {
+      if (error) {
+        console.log(error);
+      } else {
+        result.items.push(newItem);
+        result.save(function (error) {
+          if (!error) {
+            console.log("item successfully added");
+            res.redirect("/" + list);
+          }
+        });
+      }
     });
   }
+
+
 });
 
-app.get("/work", function(req,res){
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
-});
 
-app.get("/about", function(req, res){
-  res.render("about");
-});
+
+
+app.get("/:route", function(req, res){
+  // res.render("list",{listTitle:req.params.route, newListItems:[]})
+  const route = _.capitalize(req.params.route);
+  console.log(route);
+  List.findOne({name: route}, function (error, result) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(result);
+      if (result) {
+        console.log("list found");
+        res.render("list",{listTitle:route, newListItems: result.items})
+      }else {
+        const newList = new List({
+          name: route,
+          items:[]
+        });
+        newList.save(function (err) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log("list created successfully");
+          }
+        });
+        res.render("list",{listTitle:route, newListItems: []});
+      }
+
+    }
+  });
+})
+
+
+
 
 
 app.post("/delete", function (req, res) {
@@ -112,13 +136,24 @@ app.post("/delete", function (req, res) {
   //   }
   //   res.redirect("/");
   // })
+  const list = req.body.list;
 
-  Item.findByIdAndRemove(req.body.checkBox, function (err) {
-    if (!err) {
-      console.log("Successfully deleted");
-      res.redirect("/");
-    }
-  });
+  if (list === "Today") {
+
+    Item.findByIdAndRemove(req.body.checkBox, function (err) {
+      if (!err) {
+        console.log("Successfully deleted");
+        res.redirect("/");
+      }
+    });
+  } else {
+    List.findOneAndUpdate({name: list}, {$pull: {items: {_id: req.body.checkBox}}}, function (err, results) {
+      if (!err) {
+        console.log("Successfully deleted");
+        res.redirect("/" + list);
+      }
+    });
+  }
 
 });
 
