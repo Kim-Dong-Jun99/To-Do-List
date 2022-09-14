@@ -1,7 +1,7 @@
 {
   "name": "todolist-v1",
   "version": "1.0.0",
-  "description": "",
+  "description": "To Do List webpage made by express, ejs, and mongodb. Deployed by heroku",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,6 +11,16 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "ejs": "^2.6.1",
-    "express": "^4.16.3"
-  }
+    "express": "^4.16.3",
+    "mongoose": "^6.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kim-Dong-Jun99/To-Do-List.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/Kim-Dong-Jun99/To-Do-List/issues"
+  },
+  "homepage": "https://github.com/Kim-Dong-Jun99/To-Do-List#readme"
 }
